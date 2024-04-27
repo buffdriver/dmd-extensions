@@ -43,7 +43,7 @@ namespace DmdExt.Mirror
 				if (Position.Length != 4)
 				{
 					throw new InvalidOptionException(
-						"Argument --position must have four values: \"<Left> <Top> <Right> <Bottom>\".");
+						"Argument --position must have four values: \"<Left> <Top> <Width> <Height>\".");
 				}
 
 				if (ResizeTo.Length != 2)
