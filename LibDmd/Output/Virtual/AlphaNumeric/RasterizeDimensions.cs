@@ -63,28 +63,15 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 		/// </summary>
 		public SKMatrix SvgMatrix;
 
-		/// <summary>
-		/// Line padding as percentage of the line height
-		/// </summary>
-		public float LinePaddingPercentage { get; set; } = 0.2f;
-
-		/// <summary>
-		/// Outer padding as percentage of the display height
-		/// </summary>
-		public float OuterPaddingPercentage { get; set; } = 0.2f;
-
-		/// <summary>
-		/// Segment padding as percentage of the segment's diagonal
-		/// </summary>
 		public float SegmentPaddingPercentage { get; set; } = 0.3f;
 
-		public RasterizeDimensions(SKRect svgSize, int canvasHeight, int numChars, int numLines, float skewAngle)
+		public RasterizeDimensions(SKRect svgSize, int canvasHeight, int numChars, int numLines, float skewAngle, float linePaddingPercentage, float outerPaddingPercentage)
 		{
-			OuterPadding = (int)Math.Round(OuterPaddingPercentage * canvasHeight);
+			OuterPadding = (int)Math.Round(outerPaddingPercentage * canvasHeight);
 			SvgHeight = canvasHeight - 2 * OuterPadding;
 			SvgScale = SvgHeight / svgSize.Height;
 			SvgWidth = svgSize.Width * SvgScale;
-			LinePadding = (int)Math.Round(SvgHeight * LinePaddingPercentage);
+			LinePadding = (int)Math.Round(SvgHeight * linePaddingPercentage);
 			SvgMatrix = SKMatrix.CreateScale(SvgScale, SvgScale);
 			var svgSkewedWidth = SkewedWidth(SvgWidth, SvgHeight, skewAngle);
 			SegmentPadding = (int)Math.Round(Math.Sqrt(SvgWidth * SvgWidth + SvgHeight * SvgHeight) * SegmentPaddingPercentage);

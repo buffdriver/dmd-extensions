@@ -17,7 +17,7 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 	/// </summary>
 	public partial class AlphanumericControl : IVirtualControl
 	{
-		protected static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+		private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
 		public bool IsAvailable => true;
 		public bool NeedsDuplicateFrames => false;
@@ -55,11 +55,11 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 
 		public void Init()
 		{
-			ObservableExtensions.Subscribe(Host.WindowResized, pos => CreateImage((int)pos.Width, (int)pos.Height));
+			Host.WindowResized.Subscribe(pos => CreateImage((int)pos.Width, (int)pos.Height));
 			_stopwatch.Start();
 		}
 
-		public void CreateImage(int width, int height)
+		private void CreateImage(int width, int height)
 		{
 			Logger.Debug($"Creating image...");
 			var weight = DisplaySetting.StyleDefinition?.SegmentWeight ?? SegmentWeight.Bold;
@@ -75,7 +75,7 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 			});
 		}
 
-		public void UpdateData(ushort[] data)
+		private void UpdateData(ushort[] data)
 		{
 			if (_switchDirection == null) {
 				_switchDirection = new ConcurrentDictionary<int, SwitchDirection>();
@@ -93,7 +93,7 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 			//Logger.Debug("new data: [ {0} ]", string.Join(",", data));
 		}
 
-		public void DrawImage(WriteableBitmap writeableBitmap)
+		private void DrawImage(WriteableBitmap writeableBitmap)
 		{
 			if (_data == null || writeableBitmap == null) {
 				//Logger.Debug("Skipping: _data = {0}, writeableBitmap = {1}, count = {2}", _data, writeableBitmap, _segmentsForegroundRasterized.Count);
@@ -128,6 +128,7 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 		public void UpdateStyle(RasterizeStyleDefinition styleDef)
 		{
 			DisplaySetting.ApplyStyle(styleDef);
+			CreateImage((int)ActualWidth, (int)ActualHeight);
 			Res.Rasterize(DisplaySetting, true);
 		}
 

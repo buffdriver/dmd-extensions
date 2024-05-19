@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -21,8 +22,8 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 	public partial class VirtualAlphaNumericSettings
 	{
 		private static readonly AlphaNumericResources Res = AlphaNumericResources.GetInstance();
-		protected static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-		private static int Dpi = 96;
+		private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+		private const int Dpi = 96;
 
 		public ISubject<RasterizeStyleDefinition> OnStyleApplied { get; } = new Subject<RasterizeStyleDefinition>();
 
@@ -58,6 +59,7 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 
 			DataContext = this;
 			InitializeComponent();
+			this.Closing += Window_Closing;
 
 			_displaySetting.SetDimensions((int)Preview.Width, (int)Preview.Height);
 
@@ -97,10 +99,17 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 			});
 			BackgroundStyle.OnLayerChanged.DistinctUntilChanged().Subscribe(layerStyle => {
 				_displaySetting.ApplyLayerStyle(RasterizeLayer.Background, layerStyle);
-				Res.RasterizeLayer(_displaySetting, RasterizeLayer.Background, layerStyle, _displaySetting.Style.Background, new [] { AlphaNumericResources.FullSegment }, _displaySetting.StyleDefinition.SkewAngle);
+				Res.RasterizeLayer(_displaySetting, RasterizeLayer.Background, layerStyle, _displaySetting.Style.Background, new[] { AlphaNumericResources.FullSegment }, _displaySetting.StyleDefinition.SkewAngle);
 			});
 
 			Res.Rasterize(_displaySetting, true);
+		}
+
+		private void Window_Closing(object sender, CancelEventArgs e)
+		{
+			// hide the window instead of closing it, so we can easily re-open it later without crashing.
+			e.Cancel = true;
+			Hide();
 		}
 
 		private void SetupTriggers()
@@ -110,10 +119,28 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 			};
 			StyleNameComboBox.KeyUp += (sender, e) => StyleSelectionChanged(StyleNameComboBox.Text);
 
+
 			SkewAngleSlider.ValueChanged += (sender, e) => SkewAngleValue.Text = DoubleToString(SkewAngleSlider.Value);
 			SkewAngleValue.TextChanged += (sender, e) => SkewAngleSlider.Value = StringToDouble(SkewAngleValue.Text, SkewAngleSlider.Value);
 			SkewAngleSlider.ValueChanged += (sender, e) => _displaySetting.StyleDefinition.SkewAngle = -(float)SkewAngleSlider.Value;
 			SkewAngleSlider.ValueChanged += (sender, e) => RasterizeAll();
+
+			LinePadSlider.ValueChanged += (sender, e) => LinePadValue.Text = DoubleToString(LinePadSlider.Value);
+			LinePadValue.TextChanged += (sender, e) => LinePadSlider.Value = StringToDouble(LinePadValue.Text, LinePadSlider.Value);
+			LinePadSlider.ValueChanged += (sender, e) => {
+				_displaySetting.StyleDefinition.LinePad = (float)LinePadSlider.Value;
+				_displaySetting.SetDimensions((int)Preview.Width, (int)Preview.Height);
+				RasterizeAll();
+			};
+
+			OuterPadSlider.ValueChanged += (sender, e) => OuterPadValue.Text = DoubleToString(OuterPadSlider.Value);
+			OuterPadValue.TextChanged += (sender, e) => OuterPadSlider.Value = StringToDouble(OuterPadValue.Text, OuterPadSlider.Value);
+			OuterPadSlider.ValueChanged += (sender, e) => {
+				_displaySetting.StyleDefinition.OuterPad = (float)OuterPadSlider.Value;
+				_displaySetting.SetDimensions((int)Preview.Width, (int)Preview.Height);
+				RasterizeAll();
+			};
+
 			ThinWeight.Checked += (sender, e) => RasterizeAll();
 			BoldWeight.Checked += (sender, e) => RasterizeAll();
 			BackgroundColor.SelectedColorChanged += (sender, e) =>
@@ -121,12 +148,16 @@ namespace LibDmd.Output.Virtual.AlphaNumeric
 					BackgroundColor.SelectedColor.Value.G, BackgroundColor.SelectedColor.Value.B,
 					BackgroundColor.SelectedColor.Value.A);
 
-		}
+			}
 
 		private void UpdateControls()
 		{
 			SkewAngleValue.Text = (-_displaySetting.StyleDefinition.SkewAngle).ToString(CultureInfo.InvariantCulture);
 			SkewAngleSlider.Value = -_displaySetting.StyleDefinition.SkewAngle;
+			LinePadValue.Text = (_displaySetting.StyleDefinition.LinePad).ToString(CultureInfo.InvariantCulture);
+			LinePadSlider.Value = _displaySetting.StyleDefinition.LinePad;
+			OuterPadValue.Text = (_displaySetting.StyleDefinition.OuterPad).ToString(CultureInfo.InvariantCulture);
+			OuterPadSlider.Value = _displaySetting.StyleDefinition.OuterPad;
 			BackgroundColor.SelectedColor = _displaySetting.StyleDefinition.BackgroundColor.ToColor();
 			ThinWeight.IsChecked = _displaySetting.StyleDefinition.SegmentWeight == SegmentWeight.Thin;
 			BoldWeight.IsChecked = _displaySetting.StyleDefinition.SegmentWeight == SegmentWeight.Bold;
